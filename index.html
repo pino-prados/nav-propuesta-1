@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLECE FS — Estructura de navegacion propuesta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D2550;--blue:#1B3D8F;--blue2:#2A5298;
+  --line:#D1D9E6;--surface:#F7F9FC;--surface2:#EEF2F8;
+  --text:#0F172A;--sub:#4A5568;--muted:#8896A8;--white:#ffffff;
+  --dc:#0C4A6E;--hc:#065F46;--ind:#6B3A00;--ene:#3B1F8C;--fac:#1A3480;--spo:#0A6880;
+  --green:#16A34A;--amber:#D97706;--red:#DC2626;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:"IBM Plex Sans",sans-serif;color:var(--text);background:var(--white);display:flex;flex-direction:column}
+
+/* SLIDE CONTAINER */
+.deck{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.slides{display:flex;flex:1;transition:transform .4s cubic-bezier(.4,0,.2,1);will-change:transform}
+.slide{min-width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden}
+
+/* PROGRESS BAR */
+.progress{height:3px;background:var(--line);flex-shrink:0}
+.progress-fill{height:100%;background:var(--navy);transition:width .4s}
+
+/* NAV CONTROLS */
+.controls{display:flex;align-items:center;justify-content:space-between;padding:12px 32px;border-bottom:1px solid var(--line);flex-shrink:0;background:var(--white)}
+.ctrl-brand{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:500;color:var(--navy);display:flex;align-items:center;gap:8px}
+.ctrl-brand em{font-style:normal;color:var(--blue2)}
+.ctrl-brand span{font-size:10px;color:var(--muted);font-weight:400;letter-spacing:.08em;text-transform:uppercase}
+.ctrl-dots{display:flex;gap:6px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--line);cursor:pointer;transition:all .2s;border:1px solid var(--line)}
+.dot.on{background:var(--navy);border-color:var(--navy);width:22px;border-radius:4px}
+.ctrl-arrows{display:flex;gap:6px}
+.arr{padding:6px 14px;border:1px solid var(--line);background:var(--white);font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;color:var(--sub);cursor:pointer;border-radius:2px;transition:all .15s}
+.arr:hover{border-color:var(--navy);color:var(--navy)}
+.arr:disabled{opacity:.3;cursor:default}
+.slide-counter{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted)}
+
+/* SLIDE CONTENT */
+.slide-inner{flex:1;padding:32px 48px;overflow:auto;display:flex;flex-direction:column}
+
+/* SLIDE LABELS */
+.s-eyebrow{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.s-eyebrow::before{content:"";display:inline-block;width:16px;height:1px;background:var(--muted)}
+.s-title{font-size:26px;font-weight:600;color:var(--navy);letter-spacing:-.4px;line-height:1.2;margin-bottom:8px}
+.s-sub{font-size:13px;color:var(--sub);max-width:700px;line-height:1.7;font-weight:300;margin-bottom:28px}
+
+/* GRID UTILS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+.cell{background:var(--white);padding:18px 20px}
+.cell.bg{background:var(--surface)}
+.cell-label{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.cell-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.cell-sub{font-size:11px;color:var(--muted);margin-bottom:8px}
+.cell-desc{font-size:12px;color:var(--sub);line-height:1.6}
+.cell-list{list-style:none;display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.cell-list li{font-size:11px;color:var(--muted);display:flex;gap:6px;line-height:1.5}
+.cell-list li::before{content:">";color:var(--blue2);flex-shrink:0;font-family:monospace;font-weight:600}
+
+/* NAV MAP */
+.nav-map{display:flex;gap:0;border:1px solid var(--line);overflow:hidden;margin-bottom:20px}
+.nm-item{flex:1;padding:12px 14px;border-right:1px solid var(--line);cursor:pointer;transition:background .15s;position:relative}
+.nm-item:last-child{border-right:none}
+.nm-item.active{background:var(--navy)}
+.nm-item.active .nm-title{color:#fff}
+.nm-item.active .nm-sub{color:rgba(255,255,255,.5)}
+.nm-item:hover:not(.active){background:var(--surface)}
+.nm-title{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:2px;white-space:nowrap}
+.nm-sub{font-size:10px;color:var(--muted);font-family:"IBM Plex Mono",monospace;letter-spacing:.04em}
+.nm-new{position:absolute;top:6px;right:6px;background:var(--green);color:#fff;font-size:8px;font-weight:600;padding:1px 5px;border-radius:2px;font-family:monospace;letter-spacing:.06em}
+.nm-mod{position:absolute;top:6px;right:6px;background:var(--amber);color:#fff;font-size:8px;font-weight:600;padding:1px 5px;border-radius:2px;font-family:monospace;letter-spacing:.06em}
+
+/* PERSONAS SPLIT */
+.split{display:grid;grid-template-columns:1fr 3px 1fr 3px 1fr;gap:0;height:100%}
+.split-div{background:var(--line)}
+.split-col{padding:0 28px;display:flex;flex-direction:column}
+.split-col-label{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:12px 0;border-bottom:2px solid;margin-bottom:16px}
+.split-col-label.mod{color:var(--amber);border-color:var(--amber)}
+.split-col-label.new{color:var(--red);border-color:var(--red)}
+.split-col-label.keep{color:var(--green);border-color:var(--green)}
+.sp-item{margin-bottom:14px}
+.sp-item-title{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:3px}
+.sp-item-dest{font-family:"IBM Plex Mono",monospace;font-size:10px;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.sp-item-desc{font-size:11px;color:var(--muted);line-height:1.55}
+.arrow-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:2px;letter-spacing:.05em}
+
+/* SECTOR CARDS */
+.sc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sc{border:1px solid var(--line);padding:16px;position:relative}
+.sc.dc{background:var(--dc);border-color:var(--dc)}
+.sc-code{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.sc-name{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:3px}
+.sc-sub{font-size:10px;color:var(--muted);margin-bottom:8px}
+.sc-items{list-style:none;display:flex;flex-direction:column;gap:2px}
+.sc-items li{font-size:10px;color:var(--muted);display:flex;gap:5px}
+.sc-items li::before{content:"--";color:var(--line);flex-shrink:0;font-family:monospace}
+.sc.dc .sc-code{color:rgba(255,255,255,.45)}
+.sc.dc .sc-name{color:#fff}
+.sc.dc .sc-sub{color:rgba(255,255,255,.5)}
+.sc.dc .sc-items li{color:rgba(255,255,255,.6)}
+.sc.dc .sc-items li::before{color:rgba(255,255,255,.2)}
+.sc-badge{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:500;letter-spacing:.08em;padding:1px 6px;background:rgba(255,255,255,.2);color:rgba(255,255,255,.8);margin-bottom:7px}
+
+/* LEGEND */
+.legend{display:flex;gap:16px;margin-top:auto;padding-top:12px;border-top:1px solid var(--line);flex-shrink:0}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.leg-dot{width:8px;height:8px;border-radius:1px;flex-shrink:0}
+
+/* OVERVIEW TABLE */
+.ov-table{width:100%;border-collapse:collapse;border:1px solid var(--line);font-size:12px}
+.ov-table th{background:var(--navy);color:#fff;font-weight:500;padding:8px 12px;text-align:left;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.ov-table td{padding:8px 12px;border-bottom:1px solid var(--line);color:var(--sub);vertical-align:top}
+.ov-table tr:last-child td{border-bottom:none}
+.ov-table tr:nth-child(even) td{background:var(--surface)}
+.ov-table .nav-cell{font-weight:600;color:var(--navy)}
+.badge{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:500;padding:2px 6px;border-radius:2px;letter-spacing:.05em}
+.badge.new{background:#D1FAE5;color:#065F46}
+.badge.mod{background:#FEF3C7;color:#92400E}
+.badge.keep{background:#EFF6FF;color:#1E3A8A}
+.badge.del{background:#FEE2E2;color:#991B1B}
+
+/* LIVETEXT */
+.live-tag{display:inline-flex;align-items:center;gap:4px;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#16A34A;animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+
+<div class="deck">
+  <div class="progress"><div class="progress-fill" id="prog" style="width:14.28%"></div></div>
+
+  <div class="controls">
+    <div class="ctrl-brand">CLECE<em> FS</em> <span>Propuesta de navegacion web</span></div>
+    <div class="ctrl-dots" id="dots"></div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <span class="slide-counter" id="counter">1 / 7</span>
+      <div class="ctrl-arrows">
+        <button class="arr" id="prev" onclick="go(-1)" disabled>&#8592; Anterior</button>
+        <button class="arr" id="next" onclick="go(1)">Siguiente &#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="slides" id="slides">
+
+    <!-- SLIDE 1: OVERVIEW -->
+    <div class="slide">
+      <div class="slide-inner">
+        <div class="s-eyebrow">Propuesta de estructura</div>
+        <div class="s-title">Mapa de navegacion — clecefs.com</div>
+        <p class="s-sub">Comparativa entre la navegacion actual y la propuesta. Cada pestana de la propuesta se desarrolla en las diapositivas siguientes.</p>
+
+        <table class="ov-table">
+          <thead>
+            <tr>
+              <th>Pagina propuesta</th>
+              <th>Estado</th>
+              <th>Contenido principal</th>
+              <th>Origen del contenido</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="nav-cell">Quienes somos</td><td><span class="badge mod">Reorganizado</span></td><td>Historia, modelo de gestion, equipo, delegaciones, habilitaciones, valor de las personas, PRL</td><td>Web actual: Conocenos + Personas</td></tr>
+            <tr><td class="nav-cell">Sectores &#9660;</td><td><span class="badge new">Nuevo</span></td><td>6 sub-paginas por sector con servicios, normativa, certs y referencias especificas</td><td>Web actual: Sectores (solo lista) + nuevo contenido</td></tr>
+            <tr><td class="nav-cell">Servicios</td><td><span class="badge mod">Reorganizado</span></td><td>Portfolio tecnico completo: energia, HVAC, PCI, telecom, instalaciones, ingenieria</td><td>Web actual: Mantenimiento + Efic. energetica + FS</td></tr>
+            <tr><td class="nav-cell">Soporte tecnico end-to-end</td><td><span class="badge new">Nuevo</span></td><td>Diseno + Implementacion + O&M + Mejora continua. Argumento diferenciador de MA.</td><td>Slide 6 y 8 de la presentacion MA</td></tr>
+            <tr><td class="nav-cell">Referencias</td><td><span class="badge mod">Reorganizado</span></td><td>Todas las referencias filtradas y descritas por sector</td><td>Web actual: referencias en lista plana</td></tr>
+            <tr><td class="nav-cell">Sostenibilidad &#9660;</td><td><span class="badge keep">Se mantiene</span></td><td>Ambiental + Social (incluye PRL y Personas) + Buen gobierno</td><td>Web actual: Sostenibilidad (ya correcta)</td></tr>
+            <tr><td class="nav-cell">Contacto</td><td><span class="badge keep">Se mantiene</span></td><td>Formulario con campo de sector + datos de 6 delegaciones</td><td>Web actual: Contacto + mejora de formulario</td></tr>
+            <tr><td class="nav-cell" style="color:var(--red);text-decoration:line-through">Personas</td><td><span class="badge del">Eliminado</span></td><td>Contenido redistribuido en Quienes somos y Sostenibilidad</td><td>Web actual: Personas</td></tr>
+            <tr><td class="nav-cell" style="color:var(--red);text-decoration:line-through">Innovacion</td><td><span class="badge del">Eliminado</span></td><td>Contenido integrado en Soporte tecnico end-to-end y Quienes somos</td><td>Web actual: Innovacion</td></tr>
+          </tbody>
+        </table>
+
+        <div class="legend">
+          <span class="leg-item"><span class="leg-dot" style="background:#065F46"></span>Nuevo</span>
+          <span class="leg-item"><span class="leg-dot" style="background:#92400E"></span>Reorganizado</span>
+          <span class="leg-item"><span class="leg-dot" style="background:#1E3A8A"></span>Se mantiene</span>
+          <span class="leg-item"><span class="leg-dot" style="background:#991B1B"></span>Eliminado (contenido redistribuido)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: QUIENES SOMOS -->
+    <div class="slide">
+      <div class="slide-inner">
+        <div class="nav-map">
+          <div class="nm-item active"><div class="nm-title">Quienes somos</div><div class="nm-sub">reorganizado</div><span class="nm-mod">MOD</span></div>
+          <div class="nm-item"><div class="nm-title">Sectores</div><div class="nm-sub">nuevo</div></div>
+          <div class="nm-item"><div class="nm-title">Servicios</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Soporte end-to-end</div><div class="nm-sub">nuevo</div></div>
+          <div class="nm-item"><div class="nm-title">Referencias</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Sostenibilidad</div><div class="nm-sub">se mantiene</div></div>
+          <div class="nm-item"><div class="nm-title">Contacto</div><div class="nm-sub">se mantiene</div></div>
+        </div>
+        <div class="s-eyebrow">Pagina 1 de 7</div>
+        <div class="s-title">Quienes somos</div>
+        <p class="s-sub">Fusion de la actual "Conocenos" con los bloques tecnicos de "Personas". Unica pagina que presenta la empresa al visitante.</p>
+        <div class="g3" style="flex:1">
+          <div class="cell">
+            <div class="cell-label" style="color:var(--navy)">Empresa</div>
+            <div class="cell-title">Historia y posicionamiento</div>
+            <ul class="cell-list">
+              <li>Mas de 30 anos en servicios de mantenimiento</li>
+              <li>Integracion en Grupo Clece (ACS)</li>
+              <li>Mision, vision y valores (Slide 3 MA)</li>
+              <li>Modelo de gestion: organizacion eficiente, profesionalizada y orientada al cliente</li>
+              <li>Registro Industrial nacional n.205979</li>
+            </ul>
+          </div>
+          <div class="cell">
+            <div class="cell-label" style="color:var(--navy)">Equipo y cobertura</div>
+            <div class="cell-title">Capacidad operativa</div>
+            <ul class="cell-list">
+              <li>120 ingenieros + 2.330 tecnicos</li>
+              <li>6 delegaciones regionales + Portugal</li>
+              <li>Mapa de cobertura geografica</li>
+              <li>Formacion continua y carrera profesional</li>
+              <li>Certificacion Lean Six Sigma en gestores</li>
+            </ul>
+          </div>
+          <div class="cell">
+            <div class="cell-label" style="color:var(--amber)">Procede de: Personas (actual)</div>
+            <div class="cell-title">El valor de las personas</div>
+            <ul class="cell-list">
+              <li>Cultura y valores: honestidad, transparencia, integridad</li>
+              <li>Capacidad tecnica: ingenieria de mantenimiento</li>
+              <li>Prevencion de riesgos laborales — 6 principios</li>
+              <li>Politica de SST (PDF descargable)</li>
+              <li>Cumplimiento normativo — Sistema Compliance</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: SECTORES -->
+    <div class="slide">
+      <div class="slide-inner">
+        <div class="nav-map">
+          <div class="nm-item"><div class="nm-title">Quienes somos</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item active"><div class="nm-title">Sectores</div><div class="nm-sub">nuevo</div><span class="nm-new">NEW</span></div>
+          <div class="nm-item"><div class="nm-title">Servicios</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Soporte end-to-end</div><div class="nm-sub">nuevo</div></div>
+          <div class="nm-item"><div class="nm-title">Referencias</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Sostenibilidad</div><div class="nm-sub">se mantiene</div></div>
+          <div class="nm-item"><div class="nm-title">Contacto</div><div class="nm-sub">se mantiene</div></div>
+        </div>
+        <div class="s-eyebrow">Pagina 2 de 7 — entrada principal a la web</div>
+        <div class="s-title">Sectores</div>
+        <p class="s-sub">La web actual tiene una pagina de sectores estatica sin peso en el menu. La propuesta la convierte en la entrada principal con 6 sub-paginas especializadas. Cada una tiene la misma estructura pero contenido especifico del sector.</p>
+        <div class="sc-grid" style="flex:1">
+          <div class="sc dc">
+            <div class="sc-badge">Marca propia registrada</div>
+            <div class="sc-code">01</div>
+            <div class="sc-name">CFS Data Centers</div>
+            <div class="sc-sub">Infraestructura IT critica</div>
+            <ul class="sc-items">
+              <li>Data Hall, UPS, STS, grupos electrogenos</li>
+              <li>Refrigeracion CRAH/CRAC, HVAC</li>
+              <li>Monitorizacion DCIM, BMS</li>
+              <li>PCI, seguridad, logistica interna</li>
+            </ul>
+          </div>
+          <div class="sc">
+            <div class="sc-code" style="color:var(--hc)">02</div>
+            <div class="sc-name">Healthcare</div>
+            <div class="sc-sub" style="color:var(--hc)">Sector sociosanitario</div>
+            <ul class="sc-items">
+              <li>Gases medicinales, salas blancas</li>
+              <li>Sistemas de emergencia hospitalaria</li>
+              <li>Prevencion de legionelosis</li>
+              <li>Experiencia JCI</li>
+            </ul>
+          </div>
+          <div class="sc">
+            <div class="sc-code" style="color:var(--ind)">03</div>
+            <div class="sc-name">Industry</div>
+            <div class="sc-sub" style="color:var(--ind)">Automocion, Farma, Manufacturera</div>
+            <ul class="sc-items">
+              <li>Mantenimiento basado en condicion (CBM)</li>
+              <li>Maximizacion disponibilidad de planta</li>
+              <li>Gestion de OEMs</li>
+              <li>Lean Six Sigma</li>
+            </ul>
+          </div>
+          <div class="sc">
+            <div class="sc-code" style="color:var(--ene)">04</div>
+            <div class="sc-name">Energy</div>
+            <div class="sc-sub" style="color:var(--ene)">Servicios energeticos — transversal</div>
+            <ul class="sc-items">
+              <li>ESE acreditada, gestion CAEs</li>
+              <li>Solar FV, cogeneracion</li>
+              <li>ISO 50001, UNE 216701 x3</li>
+              <li>Alumbrado publico, recarga VE</li>
+            </ul>
+          </div>
+          <div class="sc">
+            <div class="sc-code" style="color:var(--fac)">05</div>
+            <div class="sc-name">Facilities</div>
+            <div class="sc-sub" style="color:var(--fac)">Terciario: sedes, comercial, oficinas</div>
+            <ul class="sc-items">
+              <li>Facility Management integral ISO 41011</li>
+              <li>Cuadros de mando, SLAs, KPIs</li>
+              <li>GMAO, Business Intelligence</li>
+              <li>Gestion ciclo de vida de activos</li>
+            </ul>
+          </div>
+          <div class="sc">
+            <div class="sc-code" style="color:var(--spo)">06</div>
+            <div class="sc-name">Sport &amp; Leisure</div>
+            <div class="sc-sub" style="color:var(--spo)">Polideportivos, piscinas, ocio</div>
+            <ul class="sc-items">
+              <li>Gestion integral instalaciones deportivas</li>
+              <li>Programacion tecnico-deportiva</li>
+              <li>Eficiencia energetica</li>
+              <li>Gestion de accesos y recepcion</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: SERVICIOS -->
+    <div class="slide">
+      <div class="slide-inner">
+        <div class="nav-map">
+          <div class="nm-item"><div class="nm-title">Quienes somos</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Sectores</div><div class="nm-sub">nuevo</div></div>
+          <div class="nm-item active"><div class="nm-title">Servicios</div><div class="nm-sub">reorganizado</div><span class="nm-mod">MOD</span></div>
+          <div class="nm-item"><div class="nm-title">Soporte end-to-end</div><div class="nm-sub">nuevo</div></div>
+          <div class="nm-item"><div class="nm-title">Referencias</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Sostenibilidad</div><div class="nm-sub">se mantiene</div></div>
+          <div class="nm-item"><div class="nm-title">Contacto</div><div class="nm-sub">se mantiene</div></div>
+        </div>
+        <div class="s-eyebrow">Pagina 3 de 7</div>
+        <div class="s-title">Servicios — Portfolio tecnico O&amp;M</div>
+        <p class="s-sub">El portfolio tecnico completo sin filtrar por sector. La web actual lo llama "Mantenimiento" y lo mezcla con instalaciones. Aqui se reorganiza con los titulos tecnicos del Slide 7 de MA.</p>
+        <div class="g6" style="flex:1">
+          <div class="cell">
+            <div class="cell-label" style="color:var(--dc)">Energia electrica</div>
+            <ul class="cell-list">
+              <li>Alta tension y baja tension</li>
+              <li>Grupos electrogenos</li>
+              <li>UPS y STS</li>
+              <li>Bancos de carga</li>
+              <li>LAT1/2, AT1/2</li>
+            </ul>
+          </div>
+          <div class="cell">
+            <div class="cell-label" style="color:var(--dc)">Refrigeracion/HVAC</div>
+            <ul class="cell-list">
+              <li>CRAH/CRAC</li>
+              <li>Produccion frio, calor, ACS</li>
+              <li>Distribucion hidraulica</li>
+              <li>HVAC integral</li>
+              <li>Frigorista nivel II</li>
+            </ul>
+          </div>
+          <div class="cell">
+            <div class="cell-label" style="color:var(--red)">PCI y seguridad</div>
+            <ul class="cell-list">
+              <li>Extintores, BIEs, grupos PCI</li>
+              <li>Extincion automatica</li>
+              <li>Sistemas de deteccion</li>
+              <li>Monitorizacion 24/365</li>
+            </ul>
+          </div>
+          <div class="cell">
+            <div class="cell-label" style="color:var(--ene)">Monitorizacion/telecom</div>
+            <ul class="cell-list">
+              <li>CMMS / GMAO</li>
+              <li>Gestion y operacion BMS</li>
+              <li>Plataformas DCIM</li>
+              <li>Cableado de fibra</li>
+            </ul>
+          </div>
+          <div class="cell">
+            <div class="cell-label" style="color:var(--hc)">Instalaciones generales</div>
+            <ul class="cell-list">
+              <li>Fontaneria y saneamiento</li>
+              <li>Tratamiento agua / legionela</li>
+              <li>Gas cat. A</li>
+              <li>Petroliferas PPL II</li>
+              <li>Gases fluorados, biocidas</li>
+            </ul>
+          </div>
+          <div class="cell" style="border-left:2px solid var(--navy)">
+            <div class="cell-label" style="color:var(--navy)">Ingenieria y consultoria</div>
+            <ul class="cell-list">
+              <li>Ingenieria de mantenimiento</li>
+              <li>Consultoria energetica</li>
+              <li>Asesoramiento CMMS</li>
+              <li>Gestion OEMs y proveedores</li>
+              <li>ESE / auditorias energeticas</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: SOPORTE END-TO-END -->
+    <div class="slide">
+      <div class="slide-inner">
+        <div class="nav-map">
+          <div class="nm-item"><div class="nm-title">Quienes somos</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Sectores</div><div class="nm-sub">nuevo</div></div>
+          <div class="nm-item"><div class="nm-title">Servicios</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item active"><div class="nm-title">Soporte end-to-end</div><div class="nm-sub">nuevo</div><span class="nm-new">NEW</span></div>
+          <div class="nm-item"><div class="nm-title">Referencias</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Sostenibilidad</div><div class="nm-sub">se mantiene</div></div>
+          <div class="nm-item"><div class="nm-title">Contacto</div><div class="nm-sub">se mantiene</div></div>
+        </div>
+        <div class="s-eyebrow">Pagina 4 de 7 — argumento diferenciador · Slide 6 y 8 de MA</div>
+        <div class="s-title">Soporte tecnico end-to-end</div>
+        <p class="s-sub">CFS presta servicios en todas las etapas del ciclo de vida de las infraestructuras. Esto no existe en la web actual. Es el argumento diferenciador central de la presentacion de MA.</p>
+        <div class="g4" style="flex:1">
+          <div class="cell">
+            <div class="cell-label" style="color:var(--muted)">Fase 01</div>
+            <div class="cell-title">Diseno</div>
+            <div class="cell-sub">Asesoria tecnica previa</div>
+            <ul class="cell-list">
+              <li>Complementar criterios de diseno con orientacion a eficiencia operativa</li>
+              <li>Definir requisitos tecnicos para mantenibilidad y fiabilidad</li>
+              <li>Asesorar sobre estandares y buenas practicas</li>
+            </ul>
+          </div>
+          <div class="cell">
+            <div class="cell-label" style="color:var(--muted)">Fase 02</div>
+            <div class="cell-title">Implementacion</div>
+            <div class="cell-sub">Supervision e instalacion</div>
+            <ul class="cell-list">
+              <li>Supervision verificando especificaciones</li>
+              <li>Orientacion tecnica en fases criticas</li>
+              <li>Asistencia en commissioning</li>
+            </ul>
+          </div>
+          <div class="cell" style="border-top:2px solid var(--navy)">
+            <div class="cell-label" style="color:var(--navy)">Fase 03 — core</div>
+            <div class="cell-title">Operacion y Mantenimiento</div>
+            <div class="cell-sub">24/365 — preventivo, predictivo, correctivo</div>
+            <ul class="cell-list">
+              <li>Monitorizacion continua y analisis de indicadores</li>
+              <li>Planificacion mantenimiento preventivo y correctivo</li>
+              <li>Analisis predictivo, gestion de repuestos</li>
+              <li>Auditorias de cumplimiento y reporting</li>
+              <li>Reduccion de paradas no planificadas</li>
+            </ul>
+          </div>
+          <div class="cell">
+            <div class="cell-label" style="color:var(--muted)">Transversal — Slide 8 MA</div>
+            <div class="cell-title">Mejora continua</div>
+            <div class="cell-sub">Metodologia Lean</div>
+            <ul class="cell-list">
+              <li>Vision completa de la cadena de valor</li>
+              <li>Identificacion de mudas</li>
+              <li>Estandarizacion de actividades</li>
+              <li>Mejora orientada al cliente</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: PERSONAS — redistribucion -->
+    <div class="slide">
+      <div class="slide-inner">
+        <div class="s-eyebrow">Tratamiento especifico — pagina actual "Personas"</div>
+        <div class="s-title">Donde va el contenido de "Personas"</div>
+        <p class="s-sub">La pagina "Personas" de la web actual tiene tres bloques diferenciados. Cada uno encaja de forma natural en una seccion distinta de la propuesta. La pestana desaparece del menu pero ningun contenido se pierde.</p>
+
+        <div style="flex:1;display:grid;grid-template-columns:1fr 3px 1fr 3px 1fr;gap:0">
+          <div class="split-col">
+            <div class="split-col-label del">Bloque 1: El valor de las personas</div>
+            <div class="sp-item">
+              <div class="sp-item-title">Cultura y valores</div>
+              <div class="sp-item-dest">
+                <span class="arrow-badge" style="background:#D1FAE5;color:#065F46">&#8594; Quienes somos</span>
+              </div>
+              <div class="sp-item-desc">Honestidad, transparencia, integridad. Forma parte de la presentacion de la empresa ante el cliente.</div>
+            </div>
+            <div class="sp-item">
+              <div class="sp-item-title">Capacidad tecnica del equipo</div>
+              <div class="sp-item-dest">
+                <span class="arrow-badge" style="background:#D1FAE5;color:#065F46">&#8594; Quienes somos</span>
+              </div>
+              <div class="sp-item-desc">120 ingenieros, 2.330 tecnicos. Formacion continua. Lean Six Sigma. Son datos de credibilidad tecnica.</div>
+            </div>
+            <div class="sp-item">
+              <div class="sp-item-title">Cumplimiento normativo</div>
+              <div class="sp-item-dest">
+                <span class="arrow-badge" style="background:#D1FAE5;color:#065F46">&#8594; Quienes somos</span>
+              </div>
+              <div class="sp-item-desc">Sistema de Compliance. ISO 19601. Encaja en el bloque de modelo de empresa.</div>
+            </div>
+          </div>
+          <div style="background:var(--line)"></div>
+          <div class="split-col">
+            <div class="split-col-label del">Bloque 2: Prevencion de riesgos</div>
+            <div class="sp-item">
+              <div class="sp-item-title">Los 6 principios preventivos</div>
+              <div class="sp-item-dest">
+                <span class="arrow-badge" style="background:#FEF3C7;color:#92400E">&#8594; Sostenibilidad Social</span>
+              </div>
+              <div class="sp-item-desc">La politica de SST y la ISO 45001 son contenido de sostenibilidad, no de presentacion comercial. El visitante lo espera ahi.</div>
+            </div>
+            <div class="sp-item">
+              <div class="sp-item-title">Politica de SST (PDF)</div>
+              <div class="sp-item-dest">
+                <span class="arrow-badge" style="background:#FEF3C7;color:#92400E">&#8594; Sostenibilidad Social</span>
+              </div>
+              <div class="sp-item-desc">Documento descargable. Se mantiene pero reubicado junto a EFR, Plan de Igualdad e IQNet SR10.</div>
+            </div>
+            <div class="sp-item">
+              <div class="sp-item-title">Corazon y Manos (ONG)</div>
+              <div class="sp-item-dest">
+                <span class="arrow-badge" style="background:#FEF3C7;color:#92400E">&#8594; Sostenibilidad Social</span>
+              </div>
+              <div class="sp-item-desc">Asociacion sin animo de lucro del grupo. Encaja en el bloque de accion social.</div>
+            </div>
+          </div>
+          <div style="background:var(--line)"></div>
+          <div class="split-col">
+            <div class="split-col-label keep">Bloque 3: Canal de empleo</div>
+            <div class="sp-item">
+              <div class="sp-item-title">Enlace al portal de empleo</div>
+              <div class="sp-item-dest">
+                <span class="arrow-badge" style="background:#EFF6FF;color:#1E3A8A">&#8594; Menu + Footer</span>
+              </div>
+              <div class="sp-item-desc">Se mantiene exactamente como esta: enlace directo en el menu y en el footer. No necesita pagina propia.</div>
+            </div>
+            <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--line)">
+              <div style="font-family:monospace;font-size:10px;color:var(--muted);line-height:1.6">
+                Resultado: la pestana "Personas" desaparece del menu principal. Todo su contenido se reubica. El visitante que busca empleo sigue encontrando el enlace directo.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: SOSTENIBILIDAD + CONTACTO -->
+    <div class="slide">
+      <div class="slide-inner">
+        <div class="nav-map">
+          <div class="nm-item"><div class="nm-title">Quienes somos</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Sectores</div><div class="nm-sub">nuevo</div></div>
+          <div class="nm-item"><div class="nm-title">Servicios</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item"><div class="nm-title">Soporte end-to-end</div><div class="nm-sub">nuevo</div></div>
+          <div class="nm-item"><div class="nm-title">Referencias</div><div class="nm-sub">reorganizado</div></div>
+          <div class="nm-item active"><div class="nm-title">Sostenibilidad</div><div class="nm-sub">se mantiene</div></div>
+          <div class="nm-item active" style="background:transparent"><div class="nm-title" style="color:var(--navy)">Contacto</div><div class="nm-sub">se mantiene</div></div>
+        </div>
+        <div class="s-eyebrow">Paginas 6 y 7 de 7</div>
+        <div class="s-title">Sostenibilidad y Contacto</div>
+        <p class="s-sub">Ambas se mantienen con la estructura actual. Sostenibilidad absorbe el contenido de PRL y accion social de "Personas". Contacto mejora el formulario con campo de sector.</p>
+        <div class="g2" style="flex:1">
+          <div>
+            <div class="cell" style="border-bottom:1px solid var(--line)">
+              <div class="cell-label" style="color:var(--green)">Se mantiene — Sostenibilidad</div>
+              <div class="cell-title">Tres sub-paginas existentes</div>
+              <div class="g3" style="margin-top:10px">
+                <div class="cell bg">
+                  <div class="cell-label">Ambiental</div>
+                  <ul class="cell-list">
+                    <li>ISO 14064, huella de carbono</li>
+                    <li>Plan de descarbonizacion</li>
+                    <li>Flota ecologica</li>
+                    <li>CAEs (ahorros energeticos)</li>
+                  </ul>
+                </div>
+                <div class="cell bg">
+                  <div class="cell-label">Social</div>
+                  <ul class="cell-list">
+                    <li>IQNet SR10, Pacto Mundial</li>
+                    <li>Plan de Igualdad, EFR</li>
+                    <li>PRL — 6 principios + politica SST</li>
+                    <li>Corazon y Manos (ONG)</li>
+                  </ul>
+                </div>
+                <div class="cell bg">
+                  <div class="cell-label">Buen gobierno</div>
+                  <ul class="cell-list">
+                    <li>ISO 19601 Compliance</li>
+                    <li>Organo de gobierno</li>
+                    <li>Canal etico</li>
+                    <li>ISO 20400 Compras</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="cell">
+            <div class="cell-label" style="color:var(--green)">Se mantiene con mejora — Contacto</div>
+            <div class="cell-title">Formulario mejorado</div>
+            <div class="cell-desc" style="margin-top:6px">El formulario actual no tiene campo de sector. La propuesta anade un selector para que el mensaje llegue pre-categorizado a la delegacion correcta.</div>
+            <div style="margin-top:14px;border:1px solid var(--line);padding:14px;background:var(--surface)">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;font-size:10px">Campos propuestos</div>
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <div style="font-size:12px;color:var(--sub);display:flex;gap:8px"><span style="color:var(--muted);font-family:monospace;font-size:10px;width:120px;flex-shrink:0">Nombre</span>Campo de texto</div>
+                <div style="font-size:12px;color:var(--sub);display:flex;gap:8px"><span style="color:var(--muted);font-family:monospace;font-size:10px;width:120px;flex-shrink:0">Empresa</span>Campo de texto</div>
+                <div style="font-size:12px;color:var(--sub);display:flex;gap:8px"><span style="color:var(--muted);font-family:monospace;font-size:10px;width:120px;flex-shrink:0">Sector</span><strong style="color:var(--navy)">Selector: DC / Healthcare / Industry / Energy / Facilities / Sport / Otro</strong></div>
+                <div style="font-size:12px;color:var(--sub);display:flex;gap:8px"><span style="color:var(--muted);font-family:monospace;font-size:10px;width:120px;flex-shrink:0">Mensaje</span>Textarea</div>
+              </div>
+            </div>
+            <div style="margin-top:14px">
+              <div style="font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">6 delegaciones con datos de contacto</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+                <div style="font-size:11px;color:var(--sub);padding:4px 0;border-bottom:1px solid var(--line)">Centro — Manoteras, Madrid</div>
+                <div style="font-size:11px;color:var(--sub);padding:4px 0;border-bottom:1px solid var(--line)">Noroeste — Valladolid</div>
+                <div style="font-size:11px;color:var(--sub);padding:4px 0;border-bottom:1px solid var(--line)">Nordeste — Barcelona</div>
+                <div style="font-size:11px;color:var(--sub);padding:4px 0;border-bottom:1px solid var(--line)">Sur — Sevilla</div>
+                <div style="font-size:11px;color:var(--sub);padding:4px 0;border-bottom:1px solid var(--line)">Levante — Paterna</div>
+                <div style="font-size:11px;color:var(--sub);padding:4px 0">Canarias + PLM Portugal</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /slides -->
+</div><!-- /deck -->
+
+<script>
+var cur = 0;
+var total = 7;
+var slides = document.getElementById('slides');
+var prog = document.getElementById('prog');
+var counter = document.getElementById('counter');
+var prev = document.getElementById('prev');
+var next = document.getElementById('next');
+var dotsEl = document.getElementById('dots');
+
+for (var i = 0; i < total; i++) {
+  var d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' on' : '');
+  d.setAttribute('data-i', i);
+  d.onclick = (function(idx){ return function(){ go2(idx); }; })(i);
+  dotsEl.appendChild(d);
+}
+
+function go(dir) { go2(cur + dir); }
+
+function go2(idx) {
+  if (idx < 0 || idx >= total) return;
+  cur = idx;
+  slides.style.transform = 'translateX(-' + (cur * 100) + '%)';
+  prog.style.width = ((cur + 1) / total * 100) + '%';
+  counter.textContent = (cur + 1) + ' / ' + total;
+  prev.disabled = cur === 0;
+  next.disabled = cur === total - 1;
+  var dots = dotsEl.querySelectorAll('.dot');
+  for (var i = 0; i < dots.length; i++) {
+    dots[i].className = 'dot' + (i === cur ? ' on' : '');
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1);
+});
+</script>
+</body>
+</html>
